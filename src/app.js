@@ -1,4 +1,6 @@
 import express from 'express';
+import lostRoutes from './routes/lostRoutes.js';
+import foundRoutes from './routes/foundRoutes.js';
 
 const app = express();
 
@@ -9,6 +11,8 @@ app.use(express.urlencoded({ extended: true }));
 // Melayani file statis dari folder uploads
 app.use('/uploads', express.static('uploads'));
 
-// Routes akan ditambahkan pada Stage 3
+// API Routes
+app.use('/api/lost', lostRoutes);
+app.use('/api/found', foundRoutes);
 
 export default app;

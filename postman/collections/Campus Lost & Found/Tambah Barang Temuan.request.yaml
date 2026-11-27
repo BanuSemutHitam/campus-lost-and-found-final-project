@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/found"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"itemName\": \"Dompet Hitam\",\r
+
+    \  \"category\": \"Aksesoris\",\r
+
+    \  \"description\": \"Dompet hitam ditemukan di area kantin.\",\r
+
+    \  \"location\": \"Kantin Fakultas Teknik\",\r
+
+    \  \"eventDate\": \"2026-11-20\",\r
+
+    \  \"reporterName\": \"nabel\",\r
+
+    \  \"reporterContact\": \"nabel@gmail.com\"\r
+
+    }"
+order: 6000

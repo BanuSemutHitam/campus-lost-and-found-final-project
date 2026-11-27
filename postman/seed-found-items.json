@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "Dompet",
+    "category": "Aksesoris",
+    "description": "Dompet berwarna hitam ditemukan di meja baca.",
+    "location": "Perpustakaan",
+    "eventDate": "2026-10-20",
+    "reporterName": "Alea",
+    "reporterContact": "Alea@gmail.com"
+  },
+  {
+    "itemName": "Botol Minum",
+    "category": "Lainnya",
+    "description": "Botol minum biru tanpa nama pemilik.",
+    "location": "Kantin",
+    "eventDate": "2026-10-22",
+    "reporterName": "Dila",
+    "reporterContact": "Dila@gmail.com"
+  }
+]

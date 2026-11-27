@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/api/lost?location=lapangan"
+method: GET
+queryParams:
+  - key: location
+    value: lapangan
+    disabled: false
+    description: ""
+order: 2000

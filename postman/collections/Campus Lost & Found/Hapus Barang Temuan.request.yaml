@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/found/ID"
+method: DELETE
+order: 10000

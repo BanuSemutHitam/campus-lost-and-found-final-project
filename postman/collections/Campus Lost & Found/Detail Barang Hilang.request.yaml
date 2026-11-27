@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/lost/6b095d11008937b9ba6ea88c"
+method: GET
+body:
+  type: json
+  content: ""
+order: 3000

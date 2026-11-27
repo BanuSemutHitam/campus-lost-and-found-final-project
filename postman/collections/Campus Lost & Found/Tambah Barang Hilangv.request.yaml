@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/lost"
+method: POST
+body:
+  type: json
+  content: "  {\r
+
+    \    \"itemName\": \"Kartu Mahasiswa\",\r
+
+    \    \"category\": \"Dokumen\",\r
+
+    \    \"description\": \"Kartu mahasiswa hilang setelah kelas.\",\r
+
+    \    \"location\": \"Gedung FT\",\r
+
+    \    \"eventDate\": \"2026-10-21\",\r
+
+    \    \"reporterName\": \"Anwar\",\r
+
+    \    \"reporterContact\": \"Anwar@gmail.com\"\r
+
+    \  }"
+order: 1000

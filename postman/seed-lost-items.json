@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "Kartu Mahasiswa",
+    "category": "Dokumen",
+    "description": "Kartu mahasiswa hilang setelah kelas.",
+    "location": "Gedung FT",
+    "eventDate": "2026-10-21",
+    "reporterName": "Anwar",
+    "reporterContact": "Anwar@gmail.com"
+  },
+  {
+    "itemName": "earbuds huawei",
+    "category": "Elektronik",
+    "description": "disekitar lapangan",
+    "location": "FIKES",
+    "eventDate": "2026-06-06",
+    "reporterName": "Nur",
+    "reporterContact": "Nur@gmail.com"
+  }
+]

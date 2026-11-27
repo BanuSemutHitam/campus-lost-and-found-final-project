@@ -5,8 +5,8 @@ export const createLostItem = async (data) => {
   return await newItem.save();
 };
 
-export const getAllLostItems = async () => {
-  return await LostItem.find().sort({ createdAt: -1 });
+export const getAllLostItems = async (filter = {}) => {
+  return await LostItem.find(filter).sort({ createdAt: -1 });
 };
 
 export const getLostItemById = async (id) => {

@@ -95,9 +95,99 @@ export const createLost = async (req, res) => {
   }
 };
 
+const ALLOWED_CATEGORIES = ['Elektronik', 'Dokumen', 'Aksesoris', 'Pakaian', 'Lainnya'];
+const ALLOWED_LOST_STATUSES = ['Belum ditemukan', 'Ditemukan'];
+
+// Amankan karakter spesial regex untuk mencegah regex injection pada query pencarian
+const escapeRegex = (text) => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 export const getAllLost = async (req, res) => {
   try {
-    const items = await getAllLostItems();
+    // 1. Ambil seluruh query parameter & tolak format bracket operator (misal location[$ne]) pada Express 5
+    const allowedQueryKeys = ['category', 'location', 'status', 'search'];
+    for (const key of Object.keys(req.query)) {
+      const hasBracketOnAllowedKey = allowedQueryKeys.some((param) =>
+        key.startsWith(`${param}[`)
+      );
+      if (hasBracketOnAllowedKey) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validasi gagal',
+          errors: [`Format parameter ${key} tidak valid`],
+        });
+      }
+    }
+
+    const { category, location, status, search } = req.query;
+
+    // 2 & 3. Validasi tipe setiap parameter yang dikirim; segera return 400 jika bukan string
+    const queryParams = { category, location, status, search };
+    for (const [paramName, paramValue] of Object.entries(queryParams)) {
+      if (paramValue !== undefined && typeof paramValue !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Validasi gagal',
+          errors: [`Parameter ${paramName} harus berupa teks`],
+        });
+      }
+    }
+
+    // 4. Trim nilai string dan abaikan nilai kosong/whitespace
+    const trimmedCategory = category ? category.trim() : '';
+    const trimmedLocation = location ? location.trim() : '';
+    const trimmedStatus = status ? status.trim() : '';
+    const trimmedSearch = search ? search.trim() : '';
+
+    // 5 & 6. Validasi kategori dan status; return 400 jika tidak valid
+    let matchedCategory = '';
+    if (trimmedCategory !== '') {
+      matchedCategory = ALLOWED_CATEGORIES.find(
+        (c) => c.toLowerCase() === trimmedCategory.toLowerCase()
+      );
+      if (!matchedCategory) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validasi gagal',
+          errors: [
+            'Kategori tidak valid. Pilih salah satu: Elektronik, Dokumen, Aksesoris, Pakaian, Lainnya',
+          ],
+        });
+      }
+    }
+
+    if (trimmedStatus !== '' && !ALLOWED_LOST_STATUSES.includes(trimmedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validasi gagal',
+        errors: [
+          'Status tidak valid untuk laporan kehilangan. Pilih: Belum ditemukan atau Ditemukan',
+        ],
+      });
+    }
+
+    // 7. Setelah semua validasi lolos, baru bangun objek filter
+    const filter = {};
+    if (matchedCategory !== '') {
+      filter.category = matchedCategory;
+    }
+    if (trimmedLocation !== '') {
+      filter.location = { $regex: escapeRegex(trimmedLocation), $options: 'i' };
+    }
+    if (trimmedStatus !== '') {
+      filter.status = trimmedStatus;
+    }
+    if (trimmedSearch !== '') {
+      const safeSearch = escapeRegex(trimmedSearch);
+      filter.$or = [
+        { itemName: { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
+      ];
+    }
+
+    // 8. Panggil service dengan filter yang sudah aman
+    const items = await getAllLostItems(filter);
 
     return res.status(200).json({
       success: true,

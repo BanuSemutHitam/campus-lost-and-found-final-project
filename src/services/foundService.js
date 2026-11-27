@@ -5,8 +5,8 @@ export const createFoundItem = async (data) => {
   return await newItem.save();
 };
 
-export const getAllFoundItems = async () => {
-  return await FoundItem.find().sort({ createdAt: -1 });
+export const getAllFoundItems = async (filter = {}) => {
+  return await FoundItem.find(filter).sort({ createdAt: -1 });
 };
 
 export const getFoundItemById = async (id) => {

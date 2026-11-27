@@ -1,6 +1,7 @@
 import express from 'express';
 import lostRoutes from './routes/lostRoutes.js';
 import foundRoutes from './routes/foundRoutes.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -14,5 +15,8 @@ app.use('/uploads', express.static('uploads'));
 // API Routes
 app.use('/api/lost', lostRoutes);
 app.use('/api/found', foundRoutes);
+
+// Centralized error handler (harus berada setelah seluruh route)
+app.use(errorHandler);
 
 export default app;

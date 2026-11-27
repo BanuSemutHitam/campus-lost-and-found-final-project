@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import fs from 'fs';
 import {
   createFoundItem,
   getAllFoundItems,
@@ -6,6 +7,16 @@ import {
   updateFoundItem,
   deleteFoundItem,
 } from '../services/foundService.js';
+
+// Hapus file fisik secara aman; abaikan jika file tidak ditemukan
+const deleteFile = (filePath) => {
+  if (!filePath) return;
+  fs.unlink(filePath, (err) => {
+    if (err && err.code !== 'ENOENT') {
+      console.error('Gagal menghapus file fisik:', filePath, err);
+    }
+  });
+};
 
 // Validasi format ketat YYYY-MM-DD dan pastikan tanggal benar-benar ada di kalender
 const parseValidEventDate = (dateString) => {
@@ -50,6 +61,9 @@ export const createFound = async (req, res) => {
     if (eventDate !== undefined) {
       parsedDate = parseValidEventDate(eventDate);
       if (!parsedDate) {
+        if (req.file) {
+          deleteFile(req.file.path);
+        }
         return res.status(400).json({
           success: false,
           message: 'Validasi gagal',
@@ -69,7 +83,21 @@ export const createFound = async (req, res) => {
       reporterContact,
     };
 
-    const createdItem = await createFoundItem(itemData);
+    // Jika ada file yang diupload, simpan path relatifnya
+    if (req.file) {
+      itemData.image = 'uploads/' + req.file.filename;
+    }
+
+    let createdItem;
+    try {
+      createdItem = await createFoundItem(itemData);
+    } catch (dbError) {
+      // Jika penyimpanan ke database gagal, hapus file yang sudah terupload agar tidak menjadi orphan
+      if (req.file) {
+        deleteFile(req.file.path);
+      }
+      throw dbError;
+    }
 
     return res.status(201).json({
       success: true,
@@ -246,6 +274,9 @@ export const updateFound = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      if (req.file) {
+        deleteFile(req.file.path);
+      }
       return res.status(400).json({
         success: false,
         message: 'ID laporan tidak valid',
@@ -261,7 +292,6 @@ export const updateFound = async (req, res) => {
       'eventDate',
       'reporterName',
       'reporterContact',
-      'image',
       'status',
     ];
 
@@ -272,31 +302,12 @@ export const updateFound = async (req, res) => {
       }
     }
 
-    if (updateData.image !== undefined) {
-      if (updateData.image === null) {
-        updateData.image = null;
-      } else if (typeof updateData.image === 'string') {
-        const trimmedImage = updateData.image.trim();
-        if (trimmedImage === '') {
-          return res.status(400).json({
-            success: false,
-            message: 'Validasi gagal',
-            errors: ['Path gambar tidak boleh kosong; gunakan null untuk menghapus gambar'],
-          });
-        }
-        updateData.image = trimmedImage;
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: 'Validasi gagal',
-          errors: ['Path gambar harus berupa string yang valid atau null'],
-        });
-      }
-    }
-
     if (updateData.eventDate !== undefined) {
       const parsedDate = parseValidEventDate(updateData.eventDate);
       if (!parsedDate) {
+        if (req.file) {
+          deleteFile(req.file.path);
+        }
         return res.status(400).json({
           success: false,
           message: 'Validasi gagal',
@@ -306,14 +317,54 @@ export const updateFound = async (req, res) => {
       updateData.eventDate = parsedDate;
     }
 
-    const updatedItem = await updateFoundItem(id, updateData);
+    // Penanganan foto pada PUT:
+    // - Ada file baru (req.file)   → simpan path baru; hapus foto lama setelah DB berhasil diperbarui
+    // - body.image === null         → hapus foto (set null di DB); hapus file lama
+    // - Tidak ada keduanya         → biarkan foto lama tidak berubah (tidak masuk updateData)
+    let oldImagePath = null;
+
+    if (req.file) {
+      // Foto baru diupload — ambil foto lama terlebih dahulu untuk dihapus nanti
+      const existingItem = await getFoundItemById(id);
+      if (existingItem && existingItem.image) {
+        oldImagePath = existingItem.image;
+      }
+      updateData.image = 'uploads/' + req.file.filename;
+    } else if (req.body.image === null || req.body.image === 'null') {
+      // Client secara eksplisit ingin menghapus foto
+      const existingItem = await getFoundItemById(id);
+      if (existingItem && existingItem.image) {
+        oldImagePath = existingItem.image;
+      }
+      updateData.image = null;
+    }
+
+    let updatedItem;
+    try {
+      updatedItem = await updateFoundItem(id, updateData);
+    } catch (dbError) {
+      // DB gagal setelah foto baru terupload → hapus foto baru agar tidak menjadi orphan
+      if (req.file) {
+        deleteFile(req.file.path);
+      }
+      throw dbError;
+    }
 
     if (!updatedItem) {
+      // Item tidak ditemukan → hapus foto baru yang sudah terupload
+      if (req.file) {
+        deleteFile(req.file.path);
+      }
       return res.status(404).json({
         success: false,
         message: 'Laporan penemuan tidak ditemukan',
         errors: ['Data laporan penemuan dengan ID tersebut tidak ditemukan'],
       });
+    }
+
+    // DB berhasil diperbarui → hapus foto lama (jika ada)
+    if (oldImagePath) {
+      deleteFile(oldImagePath);
     }
 
     return res.status(200).json({
@@ -360,6 +411,12 @@ export const deleteFound = async (req, res) => {
         message: 'Laporan penemuan tidak ditemukan',
         errors: ['Data laporan penemuan dengan ID tersebut tidak ditemukan'],
       });
+    }
+
+    // Hapus file foto setelah data berhasil dihapus dari database.
+    // Jika file gagal dihapus (misalnya sudah tidak ada), catat error dan lanjutkan.
+    if (deletedItem.image) {
+      deleteFile(deletedItem.image);
     }
 
     return res.status(200).json({

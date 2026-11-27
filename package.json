@@ -1,0 +1,26 @@
+{
+  "name": "campus-lost-and-found",
+  "version": "1.0.0",
+  "description": "REST API backend untuk manajemen laporan barang hilang dan temuan di lingkungan kampus.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [
+    "lost-and-found",
+    "campus",
+    "rest-api",
+    "express",
+    "mongoose"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "mongoose": "^9.13.1",
+    "multer": "^2.5.0"
+  }
+}
